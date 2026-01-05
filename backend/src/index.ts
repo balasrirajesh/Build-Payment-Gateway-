@@ -3,6 +3,7 @@ import dotenv from 'dotenv';
 import fs from 'fs';
 import path from 'path';
 import { query } from './config/db';
+import { createOrder, getOrder } from './controllers/OrderController.ts';
 
 dotenv.config();
 
@@ -12,17 +13,24 @@ const PORT = process.env.PORT || 8000;
 app.use(express.json());
 
 // Initialize Database Function
+// Initialize Database Function
 const initDB = async () => {
   try {
-    // 1. Read the schema file
-    const schemaPath = path.join(__dirname, 'resources', 'schema.sql');
+    // FIX: Point to ../src/resources because the SQL file is not copied to dist
+    const schemaPath = path.join(__dirname, '../src/resources/schema.sql');
+    
+    // Verify file exists before reading
+    if (!fs.existsSync(schemaPath)) {
+      throw new Error(`Schema file not found at: ${schemaPath}`);
+    }
+
     const schemaSql = fs.readFileSync(schemaPath, 'utf8');
     
-    // 2. Execute Schema
+    // Execute Schema
     await query(schemaSql);
     console.log("✅ Database Schema Applied");
 
-    // 3. Seed Test Merchant (Required by requirements)
+    // Seed Test Merchant
     const testMerchant = {
       id: '550e8400-e29b-41d4-a716-446655440000',
       name: 'Test Merchant',
@@ -62,12 +70,36 @@ app.get('/health', async (req, res) => {
     });
   } catch (err) {
     res.status(200).json({
-        status: "healthy",
-        database: "disconnected",
-        timestamp: new Date().toISOString()
-      });
+      status: "healthy",
+      database: "disconnected",
+      timestamp: new Date().toISOString()
+    });
   }
 });
+// Authentication Middleware (Temporary placeholder)
+const authenticate = async (req: any, res: any, next: any) => {
+  const apiKey = req.headers['x-api-key'];
+  const apiSecret = req.headers['x-api-secret'];
+
+  if (!apiKey || !apiSecret) {
+    return res.status(401).json({ error: { code: "AUTHENTICATION_ERROR", description: "Missing credentials" } });
+  }
+
+  // Check DB for credentials
+  const result = await query('SELECT id FROM merchants WHERE api_key = $1 AND api_secret = $2', [apiKey, apiSecret]);
+
+  if (result.rows.length === 0) {
+    return res.status(401).json({ error: { code: "AUTHENTICATION_ERROR", description: "Invalid API credentials" } });
+  }
+
+  // Attach merchant_id to request headers for the controller to use
+  req.headers['x-merchant-id'] = result.rows[0].id;
+  next();
+};
+
+// Routes
+app.post('/api/v1/orders', authenticate, createOrder);
+app.get('/api/v1/orders/:id', authenticate, getOrder);
 
 // Start Server only after DB Init
 initDB().then(() => {
