@@ -4,6 +4,8 @@ import fs from 'fs';
 import path from 'path';
 import { query } from './config/db';
 import { createOrder, getOrder } from './controllers/OrderController.ts';
+import { createPayment , getPayment } from  './controllers/PaymentController';
+
 
 dotenv.config();
 
@@ -100,6 +102,9 @@ const authenticate = async (req: any, res: any, next: any) => {
 // Routes
 app.post('/api/v1/orders', authenticate, createOrder);
 app.get('/api/v1/orders/:id', authenticate, getOrder);
+
+app.post('/api/v1/payments', authenticate, createPayment);
+app.get('/api/v1/payments/:id', authenticate, getPayment);
 
 // Start Server only after DB Init
 initDB().then(() => {
