@@ -1,0 +1,24 @@
+{
+  "compilerOptions": {
+    /* File Layout - CRITICAL for Docker */
+    "rootDir": "./src",
+    "outDir": "./dist",
+
+    /* Module Resolution - "commonjs" is most stable for Node.js backends */
+    "target": "es2016",
+    "module": "commonjs",
+    "esModuleInterop": true,
+
+    /* Strict Typechecking - Keeps your code safe like Java */
+    "strict": true,
+    "noImplicitAny": true,
+    "strictNullChecks": true,
+    "skipLibCheck": true,
+    "forceConsistentCasingInFileNames": true,
+
+    /* Remove Frontend Settings */
+    // "jsx": "react-jsx", // <-- DELETE THIS (We are not using React in backend)
+  },
+  "include": ["src/**/*"],
+  "exclude": ["node_modules"]
+}
