@@ -5,7 +5,7 @@ import fs from 'fs';
 import path from 'path';
 import { query } from './config/db';
 import { createOrder, getOrder } from './controllers/OrderController.ts';
-import { createPayment , getPayment } from  './controllers/PaymentController';
+import { createPayment, getPayment } from './controllers/PaymentController';
 
 
 dotenv.config();
@@ -22,14 +22,14 @@ const initDB = async () => {
   try {
     // FIX: Point to ../src/resources because the SQL file is not copied to dist
     const schemaPath = path.join(__dirname, '../src/resources/schema.sql');
-    
+
     // Verify file exists before reading
     if (!fs.existsSync(schemaPath)) {
       throw new Error(`Schema file not found at: ${schemaPath}`);
     }
 
     const schemaSql = fs.readFileSync(schemaPath, 'utf8');
-    
+
     // Execute Schema
     await query(schemaSql);
     console.log("✅ Database Schema Applied");
@@ -48,12 +48,12 @@ const initDB = async () => {
       VALUES ($1, $2, $3, $4, $5)
       ON CONFLICT (email) DO NOTHING;
     `;
-    
+
     await query(insertQuery, [
-      testMerchant.id, 
-      testMerchant.name, 
-      testMerchant.email, 
-      testMerchant.api_key, 
+      testMerchant.id,
+      testMerchant.name,
+      testMerchant.email,
+      testMerchant.api_key,
       testMerchant.api_secret
     ]);
     console.log("✅ Test Merchant Seeded");
@@ -107,6 +107,29 @@ app.get('/api/v1/orders/:id', authenticate, getOrder);
 
 app.post('/api/v1/payments', authenticate, createPayment);
 app.get('/api/v1/payments/:id', authenticate, getPayment);
+
+
+// Mock data for testing
+app.get('/api/transactions', (req, res) => {
+  res.json([
+    {
+      id: "pay_12345",
+      order_id: "order_001",
+      amount: 150.00,
+      status: "success",
+      method: "Credit Card",
+      created_at: new Date().toISOString()
+    },
+    {
+      id: "pay_67890",
+      order_id: "order_002",
+      amount: 45.50,
+      status: "failed",
+      method: "PayPal",
+      created_at: new Date(Date.now() - 86400000).toISOString()
+    }
+  ]);
+});
 
 // Start Server only after DB Init
 initDB().then(() => {
