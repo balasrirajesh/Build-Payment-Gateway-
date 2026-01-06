@@ -5,7 +5,10 @@ import fs from 'fs';
 import path from 'path';
 import { query } from './config/db';
 import { createOrder, getOrder } from './controllers/OrderController.ts';
-import { createPayment, getPayment } from './controllers/PaymentController';
+
+import { createPayment, getPayments } from './controllers/PaymentController';
+
+import paymentRoutes from './routes/paymentRoutes';
 
 
 dotenv.config();
@@ -106,30 +109,9 @@ app.post('/api/v1/orders', authenticate, createOrder);
 app.get('/api/v1/orders/:id', authenticate, getOrder);
 
 app.post('/api/v1/payments', authenticate, createPayment);
-app.get('/api/v1/payments/:id', authenticate, getPayment);
+app.get('/api/v1/payments/:id', authenticate, getPayments);
 
-
-// Mock data for testing
-app.get('/api/transactions', (req, res) => {
-  res.json([
-    {
-      id: "pay_12345",
-      order_id: "order_001",
-      amount: 150.00,
-      status: "success",
-      method: "Credit Card",
-      created_at: new Date().toISOString()
-    },
-    {
-      id: "pay_67890",
-      order_id: "order_002",
-      amount: 45.50,
-      status: "failed",
-      method: "PayPal",
-      created_at: new Date(Date.now() - 86400000).toISOString()
-    }
-  ]);
-});
+app.use('/api', paymentRoutes);
 
 // Start Server only after DB Init
 initDB().then(() => {

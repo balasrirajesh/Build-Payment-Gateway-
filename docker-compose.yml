@@ -52,6 +52,9 @@ services:
       context: ./checkout-page
     container_name: gateway_checkout
     ports:
-      - "3001:80"
+      - "3001:3001"   # <--- CHANGED (was likely 3001:80)
+    volumes:
+      - ./checkout-page:/app
+      - /app/node_modules  # <--- PREVENTS the crash
     depends_on:
       - api
