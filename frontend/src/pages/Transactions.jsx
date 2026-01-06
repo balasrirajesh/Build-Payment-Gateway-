@@ -1,89 +1,111 @@
 import React, { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 
-const Transactions = () => {
-  // 1. State to store the data and loading status
+function Transactions() {
   const [transactions, setTransactions] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
 
-  // 2. Fetch data when the component mounts
   useEffect(() => {
-    const fetchTransactions = async () => {
-      try {
-        // fetching from your API running on port 8000
-        const response = await fetch('http://localhost:8000/api/transactions');
-        
-        if (!response.ok) {
-          throw new Error('Failed to fetch transactions');
-        }
-
-        const data = await response.json();
-        setTransactions(data); // Update state with API data
-      } catch (err) {
-        console.error("Error fetching transactions:", err);
-        setError(err.message);
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    fetchTransactions();
+    fetch('http://localhost:8000/api/payments')
+      .then(res => res.json())
+      .then(data => setTransactions(data))
+      .catch(err => console.error(err));
   }, []);
 
+  const updateStatus = async (id, newStatus) => {
+    try {
+      await fetch(`http://localhost:8000/api/payments/${id}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ status: newStatus })
+      });
+      const res = await fetch('http://localhost:8000/api/payments');
+      setTransactions(await res.json());
+      alert(`Payment marked as ${newStatus}`);
+    } catch (err) { console.error(err); }
+  };
+
+  // --- THEME STYLES (MATCHING DASHBOARD) ---
+  const theme = { bg: '#f3f4f6', primary: '#1e293b', white: '#ffffff', text: '#1f2937' };
+
+  const styles = {
+    wrapper: { display: 'flex', minHeight: '100vh', fontFamily: "'Inter', sans-serif", backgroundColor: theme.bg },
+    sidebar: { width: '250px', backgroundColor: theme.primary, color: theme.white, display: 'flex', flexDirection: 'column', padding: '20px' },
+    brand: { fontSize: '24px', fontWeight: 'bold', marginBottom: '40px', letterSpacing: '1px' },
+    navLink: { display: 'block', padding: '12px 15px', color: '#94a3b8', textDecoration: 'none', borderRadius: '8px', marginBottom: '5px', transition: '0.3s' },
+    navLinkActive: { backgroundColor: '#334155', color: theme.white, fontWeight: 'bold' },
+    main: { flex: 1, padding: '40px' },
+    header: { fontSize: '32px', fontWeight: '800', color: theme.text, marginBottom: '30px' },
+    
+    // Table Styles
+    tableContainer: { backgroundColor: theme.white, borderRadius: '12px', boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1)', overflow: 'hidden' },
+    table: { width: '100%', borderCollapse: 'collapse' },
+    th: { backgroundColor: '#f8fafc', padding: '16px', textAlign: 'left', fontWeight: '600', color: '#64748b', borderBottom: '1px solid #e2e8f0' },
+    td: { padding: '16px', borderBottom: '1px solid #e2e8f0', color: '#334155' },
+    row: { transition: 'background-color 0.2s' },
+    
+    // Badges
+    badge: (status) => ({
+      padding: '6px 12px', borderRadius: '20px', fontSize: '12px', fontWeight: 'bold', textTransform: 'uppercase',
+      backgroundColor: status === 'success' ? '#dcfce7' : status === 'failed' ? '#fee2e2' : '#ffedd5',
+      color: status === 'success' ? '#166534' : status === 'failed' ? '#991b1b' : '#9a3412'
+    }),
+    btn: (color) => ({
+      padding: '6px 12px', borderRadius: '6px', border: 'none', cursor: 'pointer', color: 'white', fontSize: '12px', marginRight: '8px',
+      backgroundColor: color === 'green' ? '#10b981' : '#ef4444'
+    })
+  };
+
   return (
-    <div style={{ padding: '2rem' }}>
-      <nav style={{ marginBottom: '2rem' }}>
-        <Link to="/dashboard" style={{ marginRight: '1rem' }}>Home</Link>
-        <Link to="/dashboard/transactions" style={{ fontWeight: 'bold' }}>Transactions</Link>
-      </nav>
+    <div style={styles.wrapper}>
+      <div style={styles.sidebar}>
+        <div style={styles.brand}>PAYMENT<span style={{color: '#3b82f6'}}>GATEWAY</span></div>
+        <Link to="/dashboard" style={styles.navLink}>Dashboard</Link>
+        <Link to="/dashboard/transactions" style={{...styles.navLink, ...styles.navLinkActive}}>Transactions</Link>
+      </div>
 
-      <h1>Transaction History</h1>
-
-      {/* 3. Show loading or error states */}
-      {loading && <p>Loading transactions...</p>}
-      {error && <p style={{ color: 'red' }}>Error: {error}</p>}
-
-      {!loading && !error && (
-        <table data-test-id="transactions-table" border="1" cellPadding="10" style={{ width: '100%', borderCollapse: 'collapse' }}>
-          <thead>
-            <tr>
-              <th>Payment ID</th>
-              <th>Order ID</th>
-              <th>Amount</th>
-              <th>Method</th>
-              <th>Status</th>
-              <th>Created</th>
-            </tr>
-          </thead>
-          <tbody>
-            {/* 4. Map through the data */}
-            {transactions.length > 0 ? (
-              transactions.map((tx) => (
-                <tr key={tx.id}>
-                  <td>{tx.id}</td>
-                  <td>{tx.order_id}</td>
-                  <td>${tx.amount}</td>
-                  <td>{tx.payment_method || 'N/A'}</td>
-                  <td>
-                    <span style={{ 
-                      color: tx.status === 'success' ? 'green' : 'red',
-                      fontWeight: 'bold' 
-                    }}>
-                      {tx.status}
-                    </span>
+      <div style={styles.main}>
+        <h1 style={styles.header}>Transactions</h1>
+        
+        <div style={styles.tableContainer}>
+          <table style={styles.table} data-test-id="transactions-table">
+            <thead>
+              <tr>
+                <th style={styles.th}>ID</th>
+                <th style={styles.th}>Order</th>
+                <th style={styles.th}>Amount</th>
+                <th style={styles.th}>Method</th>
+                <th style={styles.th}>Status</th>
+                <th style={styles.th}>Date</th>
+                <th style={styles.th}>Actions</th>
+              </tr>
+            </thead>
+            <tbody>
+              {transactions.map((tx) => (
+                <tr key={tx.id} style={styles.row} data-test-id="transaction-row" data-payment-id={tx.id}>
+                  <td style={{...styles.td, fontFamily: 'monospace'}} data-test-id="payment-id">{tx.id}</td>
+                  <td style={styles.td} data-test-id="order-id">{tx.order_id}</td>
+                  <td style={{...styles.td, fontWeight: 'bold'}} data-test-id="amount">₹{tx.amount}</td>
+                  <td style={styles.td} data-test-id="method">{tx.method || 'N/A'}</td>
+                  <td style={styles.td} data-test-id="status">
+                    <span style={styles.badge(tx.status)}>{tx.status}</span>
                   </td>
-                  <td>{new Date(tx.created_at).toLocaleString()}</td>
+                  <td style={styles.td} data-test-id="created-at">{new Date(tx.created_at).toLocaleDateString()}</td>
+                  <td style={styles.td}>
+                    {tx.status === 'processing' && (
+                      <>
+                        <button style={styles.btn('green')} onClick={() => updateStatus(tx.id, 'success')}>✓ Approve</button>
+                        <button style={styles.btn('red')} onClick={() => updateStatus(tx.id, 'failed')}>✕ Reject</button>
+                      </>
+                    )}
+                  </td>
                 </tr>
-              ))
-            ) : (
-              <tr><td colSpan="6">No transactions found.</td></tr>
-            )}
-          </tbody>
-        </table>
-      )}
+              ))}
+            </tbody>
+          </table>
+        </div>
+      </div>
     </div>
   );
-};
+}
 
 export default Transactions;
