@@ -261,8 +261,21 @@ const initDB = async () => {
 // --- ROUTES MOUNTING ---
 
 // 1. Health
-app.get('/health', (req, res) => {
-  res.status(200).json({ status: "healthy", database: "connected", timestamp: new Date().toISOString() });
+app.get('/health', async (req, res) => {
+  try {
+    await query('SELECT 1'); // Actual DB check
+    res.status(200).json({
+      status: "healthy",
+      database: "connected",
+      timestamp: new Date().toISOString()
+    });
+  } catch (e) {
+    res.status(503).json({
+      status: "unhealthy",
+      database: "disconnected",
+      timestamp: new Date().toISOString()
+    });
+  }
 });
 
 // 2. Test Merchant (Required)
