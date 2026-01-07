@@ -51,58 +51,60 @@ To run this project locally, make sure you have the following installed:
 ## 📂 Project Structure
 
 payment-gateway/
-├── backend/                        # API Server
-│   ├── src/
-│   │   ├── config/
-│   │   │   └── db.ts               # Database connection logic
-│   │   ├── controllers/
-│   │   │   ├── OrderController.ts  # Order logic
-│   │   │   └── PaymentController.ts# Payment logic
-│   │   ├── middleware/
-│   │   │   └── auth.ts             # Authentication check
-│   │   ├── models/
-│   │   │   └── index.ts            # Type definitions (Interfaces)
-│   │   ├── resources/
-│   │   │   └── schema.sql          # Database table creation SQL
-│   │   ├── routes/
-│   │   │   ├── orderRoutes.ts      # API routes for orders
-│   │   │   └── paymentRoutes.ts    # API routes for payments
-│   │   ├── scripts/
-│   │   │   └── seed.ts             # Script to populate test data
-│   │   ├── utils/
-│   │   │   ├── validation.ts       # Validation logic
-│   │   │   └── validators.ts       # (Likely duplicate/similar to validation.ts)
-│   │   └── index.ts                # Main server entry point
-│   ├── Dockerfile
-│   ├── package.json
-│   ├── package-lock.json
-│   └── tsconfig.json
-├── checkout-page/                  # Customer Payment UI
-│   ├── src/
-│   │   ├── App.jsx                 # Checkout page logic
-│   │   └── main.jsx
-│   ├── Dockerfile
-│   ├── index.html
-│   ├── package.json
-│   └── vite.config.js
-├── frontend/                       # Merchant Dashboard UI
-│   ├── src/
-│   │   ├── pages/
-│   │   │   ├── Dashboard.jsx
-│   │   │   ├── Login.jsx
-│   │   │   └── Transactions.jsx
-│   │   ├── App.jsx
-│   │   └── main.jsx
-│   ├── Dockerfile
-│   ├── index.html
-│   ├── package.json
-│   ├── package-lock.json
-│   └── vite.config.js
+├── backend/ # API Server
+│ ├── src/
+│ │ ├── config/
+│ │ │ └── db.ts # Database connection logic
+│ │ ├── controllers/
+│ │ │ ├── OrderController.ts # Order logic
+│ │ │ └── PaymentController.ts # Payment logic
+│ │ ├── middleware/
+│ │ │ └── auth.ts # Authentication middleware
+│ │ ├── models/
+│ │ │ └── index.ts # Type definitions
+│ │ ├── resources/
+│ │ │ └── schema.sql # Database schema
+│ │ ├── routes/
+│ │ │ ├── orderRoutes.ts # Order APIs
+│ │ │ └── paymentRoutes.ts # Payment APIs
+│ │ ├── scripts/
+│ │ │ └── seed.ts # Seed test data
+│ │ ├── utils/
+│ │ │ ├── validation.ts # Validation logic
+│ │ │ └── validators.ts # Validation helpers
+│ │ └── index.ts # Server entry point
+│ ├── Dockerfile
+│ ├── package.json
+│ ├── package-lock.json
+│ └── tsconfig.json
+│
+├── checkout-page/ # Customer Checkout UI
+│ ├── src/
+│ │ ├── App.jsx # Checkout logic
+│ │ └── main.jsx
+│ ├── Dockerfile
+│ ├── index.html
+│ ├── package.json
+│ └── vite.config.js
+│
+├── frontend/ # Merchant Dashboard UI
+│ ├── src/
+│ │ ├── pages/
+│ │ │ ├── Dashboard.jsx
+│ │ │ ├── Login.jsx
+│ │ │ └── Transactions.jsx
+│ │ ├── App.jsx
+│ │ └── main.jsx
+│ ├── Dockerfile
+│ ├── index.html
+│ ├── package.json
+│ ├── package-lock.json
+│ └── vite.config.js
+│
+├── docker-compose.yml # Service orchestration
 ├── .dockerignore
 ├── .gitignore
-├── docker-compose.yml              # Orchestration for all services
-└── README.md                       # Project documentation
-
+└── README.md
 
 ---
 
