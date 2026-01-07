@@ -3,64 +3,93 @@ import { Link } from 'react-router-dom';
 
 const Dashboard = () => {
   const [stats, setStats] = useState({ count: 0, totalAmount: 0, successRate: 0 });
+  
+  // FORM STATE
+  const [amount, setAmount] = useState(500);
+  const [loading, setLoading] = useState(false);
+
   const apiKey = "key_test_abc123";
   const apiSecret = "secret_test_xyz789";
 
+  // Fetch Stats
   useEffect(() => {
     const fetchStats = async () => {
       try {
-        const res = await fetch('http://localhost:8000/api/payments');
+        const res = await fetch('http://localhost:8000/api/v1/payments');
         const transactions = await res.json();
         const totalCount = transactions.length;
         const successfulTx = transactions.filter(t => t.status === 'success');
         const totalVol = successfulTx.reduce((sum, t) => sum + parseInt(t.amount), 0);
         const rate = totalCount > 0 ? ((successfulTx.length / totalCount) * 100).toFixed(0) : 0;
         setStats({ count: totalCount, totalAmount: totalVol, successRate: rate });
-      } catch (err) {
-        console.error("Error loading stats:", err);
-      }
+      } catch (err) { console.error(err); }
     };
     fetchStats();
   }, []);
 
-  // --- MODERN THEME STYLES ---
-  const theme = {
-    bg: '#f3f4f6', // Light Gray Background
-    primary: '#1e293b', // Dark Slate Blue
-    accent: '#3b82f6', // Bright Blue
-    white: '#ffffff',
-    success: '#10b981',
-    text: '#1f2937',
-    textLight: '#6b7280'
+  // --- MODIFIED: AUTO-REDIRECT FUNCTION ---
+  const handleProceedToPay = async (e) => {
+    e.preventDefault();
+    setLoading(true);
+
+    try {
+      const res = await fetch('http://localhost:8000/api/v1/orders', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'x-api-key': apiKey,
+          'x-api-secret': apiSecret
+        },
+        body: JSON.stringify({
+          amount: amount,
+          currency: "INR"
+        })
+      });
+
+      const data = await res.json();
+
+      if (res.ok) {
+        // 🚀 AUTO-REDIRECT to Port 3001
+        window.location.href = `http://localhost:3001?order_id=${data.id}`;
+      } else {
+        alert("Error creating order: " + JSON.stringify(data));
+        setLoading(false);
+      }
+    } catch (err) {
+      alert("Server error");
+      setLoading(false);
+    }
   };
+
+  // --- STYLES ---
+  const theme = { bg: '#f3f4f6', primary: '#1e293b', accent: '#3b82f6', white: '#ffffff', text: '#1f2937' };
 
   const styles = {
     wrapper: { display: 'flex', minHeight: '100vh', fontFamily: "'Inter', sans-serif", backgroundColor: theme.bg },
     sidebar: { width: '250px', backgroundColor: theme.primary, color: theme.white, display: 'flex', flexDirection: 'column', padding: '20px' },
     brand: { fontSize: '24px', fontWeight: 'bold', marginBottom: '40px', letterSpacing: '1px' },
-    navLink: { display: 'block', padding: '12px 15px', color: '#94a3b8', textDecoration: 'none', borderRadius: '8px', marginBottom: '5px', transition: '0.3s' },
+    navLink: { display: 'block', padding: '12px 15px', color: '#94a3b8', textDecoration: 'none', borderRadius: '8px', marginBottom: '5px' },
     navLinkActive: { backgroundColor: '#334155', color: theme.white, fontWeight: 'bold' },
     main: { flex: 1, padding: '40px' },
     header: { marginBottom: '30px' },
-    title: { fontSize: '32px', fontWeight: '800', color: theme.text, margin: 0 },
-    subTitle: { color: theme.textLight, marginTop: '5px' },
+    title: { fontSize: '32px', fontWeight: '800', color: theme.text },
     
-    // Cards Section
+    // Cards
     grid: { display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))', gap: '25px', marginBottom: '40px' },
-    card: { backgroundColor: theme.white, padding: '25px', borderRadius: '12px', boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1)', border: '1px solid #e5e7eb' },
-    cardLabel: { fontSize: '14px', color: theme.textLight, textTransform: 'uppercase', letterSpacing: '0.5px', fontWeight: '600' },
+    card: { backgroundColor: theme.white, padding: '25px', borderRadius: '12px', boxShadow: '0 4px 6px -1px rgba(0,0,0,0.1)' },
+    cardLabel: { fontSize: '14px', color: '#6b7280', textTransform: 'uppercase', fontWeight: '600' },
     cardValue: { fontSize: '36px', fontWeight: 'bold', color: theme.primary, marginTop: '10px' },
-    
-    // Credentials Box
-    credBox: { backgroundColor: theme.white, padding: '30px', borderRadius: '12px', borderLeft: `5px solid ${theme.accent}`, boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1)' },
-    credRow: { display: 'flex', alignItems: 'center', marginBottom: '15px', fontSize: '16px' },
-    credLabel: { width: '120px', fontWeight: '600', color: theme.text },
-    credValue: { fontFamily: "'Courier New', monospace", background: '#f1f5f9', padding: '8px 12px', borderRadius: '6px', color: theme.primary }
+
+    // Generator Box
+    generatorBox: { backgroundColor: theme.white, padding: '30px', borderRadius: '12px', boxShadow: '0 4px 6px -1px rgba(0,0,0,0.1)', marginBottom: '40px', borderLeft: `5px solid ${theme.accent}` },
+    inputGroup: { display: 'flex', gap: '10px', marginTop: '15px' },
+    input: { padding: '12px', borderRadius: '8px', border: '1px solid #e5e7eb', fontSize: '16px', flex: 1 },
+    button: { padding: '12px 24px', backgroundColor: theme.accent, color: 'white', border: 'none', borderRadius: '8px', fontWeight: 'bold', cursor: 'pointer', minWidth: '150px' }
   };
 
   return (
     <div style={styles.wrapper}>
-      {/* Sidebar Navigation */}
+      {/* Sidebar */}
       <div style={styles.sidebar}>
         <div style={styles.brand}>PAYMENT<span style={{color: theme.accent}}>GATEWAY</span></div>
         <Link to="/dashboard" style={{...styles.navLink, ...styles.navLinkActive}}>Dashboard</Link>
@@ -70,11 +99,10 @@ const Dashboard = () => {
       {/* Main Content */}
       <div style={styles.main} data-test-id="dashboard">
         <div style={styles.header}>
-          <h1 style={styles.title}>Overview</h1>
-          <p style={styles.subTitle}>Welcome back, Test Merchant</p>
+          <h1 style={styles.title}>Dashboard</h1>
         </div>
 
-        {/* Stats Cards */}
+        {/* Stats */}
         <div data-test-id="stats-container" style={styles.grid}>
           <div style={styles.card}>
             <div style={styles.cardLabel}>Total Transactions</div>
@@ -82,30 +110,43 @@ const Dashboard = () => {
           </div>
           <div style={styles.card}>
             <div style={styles.cardLabel}>Total Volume</div>
-            <div data-test-id="total-amount" style={{...styles.cardValue, color: theme.success}}>
-              ₹{stats.totalAmount.toLocaleString()}
-            </div>
+            <div data-test-id="total-amount" style={{...styles.cardValue, color: '#10b981'}}>₹{stats.totalAmount.toLocaleString()}</div>
           </div>
           <div style={styles.card}>
             <div style={styles.cardLabel}>Success Rate</div>
-            <div data-test-id="success-rate" style={{...styles.cardValue, color: theme.accent}}>
-              {stats.successRate}%
-            </div>
+            <div data-test-id="success-rate" style={{...styles.cardValue, color: '#3b82f6'}}>{stats.successRate}%</div>
           </div>
         </div>
 
-        {/* API Credentials */}
-        <div data-test-id="api-credentials" style={styles.credBox}>
-          <h3 style={{margin: '0 0 20px 0', color: theme.primary}}>Developer API Keys</h3>
-          <div style={styles.credRow}>
-            <span style={styles.credLabel}>API Key:</span>
-            <span data-test-id="api-key" style={styles.credValue}>{apiKey}</span>
-          </div>
-          <div style={{...styles.credRow, marginBottom: 0}}>
-            <span style={styles.credLabel}>API Secret:</span>
-            <span data-test-id="api-secret" style={styles.credValue}>{apiSecret}</span>
+        {/* NEW: Direct Payment Action */}
+        <div style={styles.generatorBox}>
+          <h3 style={{margin: 0, color: theme.primary}}>⚡ Initiate New Payment</h3>
+          <p style={{color: '#6b7280', fontSize: '14px'}}>Create an order and proceed directly to the secure checkout page.</p>
+          
+          <form onSubmit={handleProceedToPay} style={styles.inputGroup}>
+            <input 
+              type="number" 
+              value={amount} 
+              onChange={(e) => setAmount(e.target.value)} 
+              style={styles.input}
+              placeholder="Enter Amount (e.g. 500)"
+            />
+            <button type="submit" style={styles.button} disabled={loading}>
+              {loading ? "Redirecting..." : "Proceed to Pay →"}
+            </button>
+          </form>
+        </div>
+
+        {/* Credentials */}
+        <div data-test-id="api-credentials" style={{...styles.card, background: '#1e293b', color: 'white'}}>
+          <h3 style={{margin: '0 0 15px 0', fontSize: '16px'}}>Developer API Keys</h3>
+          <div style={{fontFamily: 'monospace', fontSize: '14px', opacity: 0.8}}>
+            Key: <span data-test-id="api-key">{apiKey}</span>
+            <br/>
+            Secret: <span data-test-id="api-secret">{apiSecret}</span>
           </div>
         </div>
+
       </div>
     </div>
   );

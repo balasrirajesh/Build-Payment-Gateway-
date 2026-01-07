@@ -1,86 +1,62 @@
 import { Request, Response } from 'express';
-import { v4 as uuidv4 } from 'uuid'; // Fallback
 import { query } from '../config/db';
-import { CreateOrderDTO } from '../models';
 
-// Helper to generate "order_16chars"
-const generateOrderId = (): string => {
-  const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
-  let result = '';
-  for (let i = 0; i < 16; i++) {
-    result += chars.charAt(Math.floor(Math.random() * chars.length));
-  }
-  return `order_${result}`;
+const generateId = (prefix: string) => {
+  return prefix + Math.random().toString(36).substr(2, 16);
 };
 
-export const createOrder = async (req: Request, res: Response): Promise<void> => {
+export const createOrder = async (req: Request, res: Response) => {
   try {
-    // 1. Get Merchant from Authentication Middleware (we will add this next)
-    // For now, we manually fetch the test merchant ID from the header check or DB
-    // In a real Spring Boot app, this comes from SecurityContext. 
-    // We will assume the middleware (Step 4) sets req.body.merchant_id or similar.
-    // For this step, let's validate inputs first.
-    
-    const { amount, currency, receipt, notes } = req.body as CreateOrderDTO;
-    const merchantId = req.headers['x-merchant-id']; // Temporary hack until Step 4
+    const { amount, currency, receipt, notes } = req.body;
+    const merchantId = req.headers['x-merchant-id'];
 
-    // Validation
     if (!amount || amount < 100) {
-      res.status(400).json({ 
-        error: { code: "BAD_REQUEST_ERROR", description: "amount must be at least 100" } 
-      });
-      return;
+      return res.status(400).json({ error: { code: "BAD_REQUEST_ERROR", description: "amount must be at least 100" } });
     }
 
-    // 2. Generate ID
-    const orderId = generateOrderId();
+    // Generate unique ID
+    let orderId = generateId('order_');
+    let isUnique = false;
+    while (!isUnique) {
+      const check = await query("SELECT id FROM orders WHERE id=$1", [orderId]);
+      if (check.rows.length === 0) isUnique = true;
+      else orderId = generateId('order_');
+    }
 
-    // 3. Save to Database
-    const sql = `
-      INSERT INTO orders (id, merchant_id, amount, currency, receipt, notes, status)
-      VALUES ($1, $2, $3, $4, $5, $6, 'created')
-      RETURNING *;
-    `;
-    
-    // Default currency to INR
-    const finalCurrency = currency || 'INR';
-    
-    const result = await query(sql, [
-      orderId, 
-      merchantId, 
-      amount, 
-      finalCurrency, 
-      receipt, 
-      notes
-    ]);
+    const result = await query(
+      `INSERT INTO orders (id, merchant_id, amount, currency, receipt, notes, status) 
+       VALUES ($1, $2, $3, $4, $5, $6, 'created') RETURNING *`,
+      [orderId, merchantId, amount, currency || 'INR', receipt, notes]
+    );
 
-    const order = result.rows[0];
-
-    // 4. Return Response
-    res.status(201).json(order);
-
+    res.status(201).json(result.rows[0]);
   } catch (error) {
-    console.error("Create Order Error:", error);
+    console.error(error);
     res.status(500).json({ error: "Internal Server Error" });
   }
 };
 
-export const getOrder = async (req: Request, res: Response): Promise<void> => {
+export const getOrder = async (req: Request, res: Response) => {
   try {
-    const { id } = req.params;
-    
-    const result = await query('SELECT * FROM orders WHERE id = $1', [id]);
-    
+    const result = await query('SELECT * FROM orders WHERE id=$1', [req.params.id]);
     if (result.rows.length === 0) {
-      res.status(404).json({ 
-        error: { code: "NOT_FOUND_ERROR", description: "Order not found" } 
-      });
-      return;
+      return res.status(404).json({ error: { code: "NOT_FOUND_ERROR", description: "Order not found" } });
     }
-
-    res.status(200).json(result.rows[0]);
+    res.json(result.rows[0]);
   } catch (error) {
-    console.error("Get Order Error:", error);
-    res.status(500).json({ error: "Internal Server Error" });
+    res.status(500).json({ error: "Server error" });
+  }
+};
+
+export const getOrderPublic = async (req: Request, res: Response) => {
+  try {
+    // Only return safe public info
+    const result = await query('SELECT id, amount, currency, status FROM orders WHERE id=$1', [req.params.id]);
+    if (result.rows.length === 0) {
+      return res.status(404).json({ error: { code: "NOT_FOUND_ERROR", description: "Order not found" } });
+    }
+    res.json(result.rows[0]);
+  } catch (error) {
+    res.status(500).json({ error: "Server error" });
   }
 };

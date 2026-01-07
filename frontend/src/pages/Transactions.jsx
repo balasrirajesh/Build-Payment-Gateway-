@@ -5,7 +5,8 @@ function Transactions() {
   const [transactions, setTransactions] = useState([]);
 
   useEffect(() => {
-    fetch('http://localhost:8000/api/payments')
+    // CORRECT: Uses /v1
+    fetch('http://localhost:8000/api/v1/payments')
       .then(res => res.json())
       .then(data => setTransactions(data))
       .catch(err => console.error(err));
@@ -13,12 +14,15 @@ function Transactions() {
 
   const updateStatus = async (id, newStatus) => {
     try {
-      await fetch(`http://localhost:8000/api/payments/${id}`, {
+      // FIX 1: Added /v1 here
+      await fetch(`http://localhost:8000/api/v1/payments/${id}`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ status: newStatus })
       });
-      const res = await fetch('http://localhost:8000/api/payments');
+      
+      // FIX 2: Added /v1 here for refetching
+      const res = await fetch('http://localhost:8000/api/v1/payments');
       setTransactions(await res.json());
       alert(`Payment marked as ${newStatus}`);
     } catch (err) { console.error(err); }

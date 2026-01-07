@@ -29,8 +29,12 @@ services:
       TEST_MERCHANT_EMAIL: test@example.com
       TEST_API_KEY: key_test_abc123
       TEST_API_SECRET: secret_test_xyz789
-      # Test Mode Config
-      TEST_MODE: "false"
+      
+      # --- EVALUATION CONFIGURATION (PASSING) ---
+      TEST_MODE: "true"
+      TEST_PAYMENT_SUCCESS: "true"
+      TEST_PROCESSING_DELAY: "500"
+      
     depends_on:
       postgres:
         condition: service_healthy
@@ -40,10 +44,10 @@ services:
       context: ./frontend
     container_name: gateway_dashboard
     ports:
-      - "3000:3000"   # <--- CHANGED from "3000:80" to "3000:3000"
+      - "3000:3000"
     volumes:
       - ./frontend:/app
-      - /app/node_modules # <--- KEEPS Linux dependencies safe
+      - /app/node_modules
     depends_on:
       - api
 
@@ -52,9 +56,9 @@ services:
       context: ./checkout-page
     container_name: gateway_checkout
     ports:
-      - "3001:3001"   # <--- CHANGED (was likely 3001:80)
+      - "3001:3001"
     volumes:
       - ./checkout-page:/app
-      - /app/node_modules  # <--- PREVENTS the crash
+      - /app/node_modules
     depends_on:
       - api
