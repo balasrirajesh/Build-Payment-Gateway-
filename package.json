@@ -1,0 +1,9 @@
+{
+  "dependencies": {
+    "bullmq": "^5.66.5",
+    "ioredis": "^5.9.1"
+  },
+  "devDependencies": {
+    "@types/ioredis": "^4.28.10"
+  }
+}
